@@ -22,12 +22,8 @@ namespace SCHALE.GameServer.Utils
                 case "SQLServer":
                     services.AddDbContext<SCHALEContext>(opt =>
                        opt
-                       .UseSqlServer(conf.GetConnectionString("SQLServer") ?? throw NoConnectionStringException,
-                        actions =>
-                        {
-                            actions.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null);
-                        })
-                        .UseLazyLoadingProxies()
+                       .UseSqlServer(conf.GetConnectionString("SQLServer") ?? throw NoConnectionStringException)
+                       .UseLazyLoadingProxies()
                     , ServiceLifetime.Singleton, ServiceLifetime.Singleton);
                     break;
                 default: throw new ArgumentException($"SQL Provider '{sqlProvider}' is not valid");
