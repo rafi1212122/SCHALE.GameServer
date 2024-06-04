@@ -17,18 +17,26 @@ namespace SCHALE.GameServer.Services
             context = _context;
         }
 
-        public AccountDB GetAccount(SessionKey? sessionKey)
+        public long GetAccountServerId(SessionKey? sessionKey)
         {
             if (sessionKey is null)
                 throw new WebAPIException(WebAPIErrorCode.InvalidSession, "SessionKey not received");
 
             if (sessions.TryGetValue(sessionKey.AccountServerId, out Guid token) && token.ToString() == sessionKey.MxToken)
             {
-                var account = context.Accounts.SingleOrDefault(x => x.ServerId == sessionKey.AccountServerId);
-
-                if (account is not null)
-                    return account;
+                return sessionKey.AccountServerId;
             }
+
+            throw new WebAPIException(WebAPIErrorCode.SessionNotFound, "Session key is invalid");
+        }
+
+        public AccountDB GetAccount(SessionKey? sessionKey)
+        {
+            var accountID = GetAccountServerId(sessionKey);
+            var account = context.Accounts.SingleOrDefault(x => x.ServerId == accountID);
+
+            if (account is not null)
+                return account;
 
             throw new WebAPIException(WebAPIErrorCode.SessionNotFound, "Failed to get AccountDB from session");
         }
@@ -67,6 +75,7 @@ namespace SCHALE.GameServer.Services
     public interface ISessionKeyService
     {
         public SessionKey? Create(long publisherAccountId);
+        public long GetAccountServerId(SessionKey? sessionKey);
         public AccountDB GetAccount(SessionKey? sessionKey);
     }
 }

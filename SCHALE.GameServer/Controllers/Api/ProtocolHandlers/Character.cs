@@ -50,7 +50,7 @@ namespace SCHALE.GameServer.Controllers.Api.ProtocolHandlers
         public ResponsePacket PotentialGrowthHandler(CharacterPotentialGrowthRequest req)
         {
             var account = sessionKeyService.GetAccount(req.SessionKey);
-            var targetCharacter = account.Characters.FirstOrDefault(x => x.ServerId == req.TargetCharacterDBId);
+            var targetCharacter = account.Characters.FirstOrDefault(x => x.ServerId == req.TargetCharacterDBId)!;
 
             foreach (var growthReq in req.PotentialGrowthRequestDBs)
             {
@@ -62,6 +62,90 @@ namespace SCHALE.GameServer.Controllers.Api.ProtocolHandlers
             return new CharacterPotentialGrowthResponse()
             {
                 CharacterDB = targetCharacter
+            };
+        }
+
+        [ProtocolHandler(Protocol.Character_Transcendence)]
+        public ResponsePacket TranscendenceHandler(CharacterTranscendenceRequest req)
+        {
+            // TODO: implement right reponse
+            // e.g. return new item count
+            var accountID = sessionKeyService.GetAccountServerId(req.SessionKey);
+            var ch = context.GetCharacter(req.TargetCharacterServerId)!;
+            var itemNeeded = ch!.StarGrade switch
+            {
+                1 => 30,
+                2 => 80,
+                3 => 100,
+                4 => 120,
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+
+            var item = context.GetItem(accountID, ch.UniqueId);
+            if (item == null || item.StackCount < itemNeeded) throw new InvalidOperationException("stone not enough");
+
+            using var trn = context.Database.BeginTransaction();
+
+            try {
+                ch.StarGrade++;
+                item.StackCount -= itemNeeded;
+
+                context.SaveChanges();
+                trn.Commit();
+            } catch (Exception) {
+                throw;
+            }
+
+            return new CharacterTranscendenceResponse()
+            {
+                CharacterDB = ch,
+                ParcelResultDB = new()
+                {
+                    ItemDBs = new Dictionary<long, ItemDB> { { item.UniqueId, item } }
+                }
+            };
+        }
+
+        [ProtocolHandler(Protocol.Character_WeaponTranscendence)]
+        public ResponsePacket WeaponTranscendenceHandler(CharacterWeaponTranscendenceRequest req)
+        {
+            // TODO: implement right reponse
+            var accountID = sessionKeyService.GetAccountServerId(req.SessionKey);
+            var ch = context.GetCharacter(req.TargetCharacterServerId, false)!;
+            var weapon = context.GetWeapon(accountID, ch.UniqueId);
+            if (weapon == null) throw new InvalidOperationException("character has no weapon");
+
+            var itemNeeded = weapon.StarGrade switch
+            {
+                1 => 120,
+                2 => 180,
+                _ => throw new ArgumentOutOfRangeException(),
+            };
+
+            var item = context.GetItem(accountID, ch.UniqueId);
+            if (item == null || item.StackCount < itemNeeded) throw new InvalidOperationException("stone not enough");
+
+            using var trn = context.Database.BeginTransaction();
+
+            try
+            {
+                weapon.StarGrade++;
+                item.StackCount -= itemNeeded;
+
+                context.SaveChanges();
+                trn.Commit();
+            } catch (Exception)
+            {
+                throw;
+            }
+
+            return new CharacterWeaponTranscendenceResponse()
+            {
+                ParcelResultDB = new()
+                {
+                    ItemDBs = new Dictionary<long, ItemDB> { { item.UniqueId, item } },
+                    WeaponDBs = new List<WeaponDB> { weapon },
+                }
             };
         }
     }

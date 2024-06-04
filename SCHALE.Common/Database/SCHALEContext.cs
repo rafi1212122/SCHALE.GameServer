@@ -102,6 +102,48 @@ namespace SCHALE.Common.Database
             modelBuilder.Entity<MissionProgressDB>().Property(x => x.ServerId).ValueGeneratedOnAdd();
             modelBuilder.Entity<MissionProgressDB>().Property(x => x.ProgressParameters).HasJsonConversion();
         }
+
+        public AccountDB? GetAccount(long accountServerID, bool tracking = true)
+        {
+            IQueryable<AccountDB> q = tracking ? Accounts : Accounts.AsNoTracking();
+            return q.FirstOrDefault(x => x.ServerId == accountServerID);
+        }
+
+        public CharacterDB? GetCharacter(long chServerID, bool tracking = true)
+        {
+            IQueryable<CharacterDB> q = tracking ? Characters : Characters.AsNoTracking();
+            return q.FirstOrDefault(x => x.ServerId == chServerID);
+        }
+
+        public CharacterDB? GetCharacter(long accountServerID, long chUniqueID, bool tracking = true)
+        {
+            IQueryable<CharacterDB> q = tracking ? Characters : Characters.AsNoTracking();
+            return q.FirstOrDefault(x => x.AccountServerId == accountServerID && x.UniqueId == chUniqueID);
+        }
+
+        public WeaponDB? GetWeapon(long chServerID, bool tracking = true)
+        {
+            IQueryable<WeaponDB> q = tracking ? Weapons : Weapons.AsNoTracking();
+            return q.FirstOrDefault(x => x.ServerId == chServerID);
+        }
+
+        public WeaponDB? GetWeapon(long accountServerID, long chUniqueID, bool tracking = true)
+        {
+            IQueryable<WeaponDB> q = tracking ? Weapons : Weapons.AsNoTracking();
+            return q.FirstOrDefault(x => x.AccountServerId == accountServerID && x.UniqueId == chUniqueID);
+        }
+
+        public ItemDB? GetItem(long itemServerID, bool tracking = true)
+        {
+            IQueryable<ItemDB> q = tracking ? Items : Items.AsNoTracking();
+            return q.FirstOrDefault(x => x.ServerId == itemServerID);
+        }
+
+        public ItemDB? GetItem(long accountServerID, long itemUniqueID, bool tracking = true)
+        {
+            IQueryable<ItemDB> q = tracking ? Items : Items.AsNoTracking();
+            return q.FirstOrDefault(x => x.AccountServerId == accountServerID && x.UniqueId == itemUniqueID);
+        }
     }
 
     public class SCHALESqliteContext : SCHALEContext
